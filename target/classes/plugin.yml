@@ -1,0 +1,7 @@
+name: hideandseek
+version: 1.0
+main: tk.pshub.parangee.hideandseek.plugin.HideAndSeekPlugin
+depend: [Kotlin]
+commands:
+  술래잡기:
+    permission: pshub.hideandseek.command
