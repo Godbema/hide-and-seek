@@ -15,6 +15,8 @@ import org.bukkit.potion.PotionEffectType
 import tk.pshub.parangee.hideandseek.Store
 import tk.pshub.parangee.hideandseek.controllers.PlayerRandomSelector
 import tk.pshub.parangee.hideandseek.events.DeathEvent
+import tk.pshub.parangee.hideandseek.events.InteractEvent
+import tk.pshub.parangee.hideandseek.items.ShootStick
 import java.io.File
 import java.lang.Exception
 import java.lang.StringBuilder
@@ -31,6 +33,7 @@ class HideAndSeekPlugin : JavaPlugin() {
         registerCommand()
         startTimer()
         server.pluginManager.registerEvents(DeathEvent(this), this)
+        server.pluginManager.registerEvents(InteractEvent(this), this)
     }
 
     private fun registerCommand() {
@@ -46,6 +49,13 @@ class HideAndSeekPlugin : JavaPlugin() {
                         }
                     }
                 }
+                then("give") {
+                    then("shootStick") {
+                        executes {
+                            (it.sender as Player).inventory.addItem(ShootStick())
+                        }
+                    }
+                }
                 then("reset") {
                     executes {
                         store.finder = Bukkit.getPlayer("") as Player
@@ -56,10 +66,19 @@ class HideAndSeekPlugin : JavaPlugin() {
                             it.teleport(store.startLocation)
                             it.gameMode = GameMode.ADVENTURE
                             it.inventory.clear()
-                            it.removePotionEffect(PotionEffectType.SPEED)
+                            it.activePotionEffects.forEach { potion ->
+                                it.removePotionEffect(potion.type)
+                            }
                             it.health = it.maxHealth
                         }
                         it.sender.sendMessage(ChatColor.translateAlternateColorCodes('&', "&f[&ai&f] &a시스템 초기화가 완료되었습니다."))
+                    }
+                }
+                then("seeker") {
+                    then("target" to player()) {
+                        executes {
+                            store.finder = Bukkit.getPlayer(it.getArgument("target")) as Player
+                        }
                     }
                 }
                 then("location") {
@@ -190,6 +209,13 @@ class HideAndSeekPlugin : JavaPlugin() {
                 meta.isUnbreakable = true
                 item.itemMeta = meta
                 store.finder.inventory.addItem(item)
+                Bukkit.getOnlinePlayers().forEach {
+                    if (it != store.finder) {
+                        var i = ShootStick()
+                        i.amount = 5
+                        it.inventory.addItem(i)
+                    }
+                }
             }
         }, 0, 1)
     }
